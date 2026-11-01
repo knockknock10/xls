@@ -118,8 +118,7 @@ absl::StatusOr<Function*> BuildRedundantFlagRepro(Package* p, bool with_mux) {
   BValue c0 = fb.Or({a_c0, b_c0, fb.And({a_c2, is_b, b_c1_cmp}),
                      fb.And({is_a, a_c1_cmp, b_c2})});
   BValue c1 = fb.And(fb.Or({a_c1, b_c1}), fb.Not(c0));
-  // Preserve the left-associated shape produced by DSLX for x && y && z.
-  BValue c2 = fb.And(fb.And(fb.Or({a_c2, b_c2}), fb.Not(c0)), fb.Not(c1));
+  BValue c2 = fb.And({fb.Or({a_c2, b_c2}), fb.Not(c0), fb.Not(c1)});
   return fb.BuildWithReturnValue(fb.Tuple({c0, c1, c2}));
 }
 
@@ -132,7 +131,7 @@ TEST_F(ConditionalSpecializationPassTest,
     solvers::ScopedVerifyEquivalence sve{f};
     EXPECT_THAT(Run(f), IsOkAndHolds(true));
     EXPECT_THAT(f->return_value()->As<Tuple>()->operand(2),
-                m::And(m::And(m::Or(), m::Not()), m::Literal(1)));
+                m::And(m::Or(), m::Not(), m::Literal(1)));
   }
   {
     auto p = CreatePackage();
@@ -141,7 +140,7 @@ TEST_F(ConditionalSpecializationPassTest,
     solvers::ScopedVerifyEquivalence sve{f};
     EXPECT_THAT(Run(f), IsOkAndHolds(true));
     EXPECT_THAT(f->return_value()->As<Tuple>()->operand(2),
-                m::And(m::And(m::Or(), m::Not()), m::Literal(1)));
+                m::And(m::Or(), m::Not(), m::Literal(1)));
   }
 }
 

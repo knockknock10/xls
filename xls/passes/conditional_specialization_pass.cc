@@ -933,9 +933,6 @@ absl::StatusOr<bool> EliminateNoopNext(FunctionBase* f) {
 
 static constexpr int64_t kBddGcRate = 10000;
 static constexpr int64_t kBddGcThreshold = 5'000'000'000;  // 5GB
-// Keep the default BDD path budget unchanged for other passes.
-constexpr int64_t kConditionalSpecializationBddPathLimit =
-    2 * BddQueryEngine::kDefaultPathLimit;
 
 }  // namespace
 
@@ -960,11 +957,7 @@ absl::StatusOr<bool> ConditionalSpecializationPass::RunOnFunctionBaseInternal(
   UnionQueryEngine query_engine;
   std::optional<BddQueryEngine*> bdd_query_engine;
   if (use_bdd_) {
-    // Conditional specialization relies on Boolean relationships under
-    // assumptions. A modestly larger BDD path budget helps preserve those
-    // relationships for muxed operands without changing other passes' budget.
-    bdd_query_engine = context.SharedQueryEngine<BddQueryEngine>(
-        f, kConditionalSpecializationBddPathLimit);
+    bdd_query_engine = context.SharedQueryEngine<BddQueryEngine>(f);
     query_engine =
         UnionQueryEngine::Of(StatelessQueryEngine(), *bdd_query_engine);
   } else {
